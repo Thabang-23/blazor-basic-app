@@ -7,7 +7,7 @@ trigger:
 - main
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: windows-latest
 
 variables:
   buildConfiguration: 'Release'
@@ -15,3 +15,29 @@ variables:
 steps:
 - script: dotnet build --configuration $(buildConfiguration)
   displayName: 'dotnet build $(buildConfiguration)'
+- task: UseDotNet@2
+  displayName: 'Install .NET Core SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '6.x'
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'restore'
+    feedsToUse: 'select'
+    projects: '**/*.cproj'
+    vstsFeed: '9d14b4e3-c2d5-41e3-9522-cec6544a7b57'
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    projects: '**/*.csproj'
+    arguments: '--configuration $(buildConfiguration)'
+- task: AzureWebApp@1
+  inputs:
+    azureSubscription: 'Main subscription(fb2e6622-df58-402f-8a90-a2323db6cdec)'
+    appType: 'webApp'
+    appName: 'pipelinez'
+    deployToSlotOrASE: true
+    resourceGroupName: 'PipelineDemo'
+    slotName: 'production'
+    package: '$(System.DefaultWorkingDirectory)/**/*.zip'
+    deploymentMethod: 'auto'
